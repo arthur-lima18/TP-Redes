@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoKenPô!</title>
+</head>
+<body>
+    
+    <main>    
+        <h1>JoKenPô!</h1>
+        <div id="app">
+            <p v-if="game">
+                <strong>{{ game._player1._score }} {{ game._player1._name }}</strong>
+                VS
+                <strong>{{ game._player2._name }} {{ game._player2._score }}</strong>
+            </p>
+            <p>{{ msg }}</p>
+
+            <div class="game" v-if="game">
+                <h4>Rodada {{ game._round }}</h4>
+                <div class="options">
+                    <input type="image" src="./assets/pedra.png" width="160" height="160" @click="playerChoice(1)"/>
+                    <input type="image" src="./assets/papel.png" width="160" height="160" @click="playerChoice(2)"/>
+                    <input type="image" src="./assets/tesoura.png" width="160" height="160" @click="playerChoice(3)"/>
+                </div>
+                <div class="board">
+                    
+                </div>
+            </div>
+
+            <div class="register" v-if="!game && !blockRegister">
+                <input type="text" v-model="playerName" placeholder="Insira seu nome">
+                <button @click="startGame()" class="btn">Jogar</button>
+            </div>
+        </div>
+    </main>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="vue.js"></script>
+    <script src="./js/script.js"></script>
+
+</body>
+</html>
