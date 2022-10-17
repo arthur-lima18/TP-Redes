@@ -8,7 +8,8 @@ const app = new Vue({
         playerIndex: null,
         msg: "",
         blockRegister: false,
-        haveChoice: false
+        haveChoice: false,
+        isRoundFinished: false
     },
     methods: {
         startGame() {
@@ -19,8 +20,8 @@ const app = new Vue({
             })
         },
         renderMsgChoose() {
-            //haveChoice deve ser true quando o usuario adversario ja tiver escolhido
-            this.msg = this.haveChoice ? `Aguardando escolha do adversário! Você escolheu ${this.playerChoiceNumber(this.choice)}`  : "Faça sua escolha!"
+            //haveChoice deve ser true quando o usuario ja tiver escolhido
+            this.msg = this.haveChoice ? `Aguardando escolha do adversário! Você escolheu ${this.playerChoiceNumber()}`  : "Faça sua escolha!"
         },
         playerChoice(choice) {
             if(this.haveChoice) return
@@ -28,20 +29,24 @@ const app = new Vue({
             this.haveChoice = true
             this.choice = choice
             this.socket.emit('make.choice', {
-                index: this.playerIndex,
+                index: this.playerIndex-1,
                 choice: this.choice
             })
 
             this.renderMsgChoose()
         },
-        playerChoiceNumber(choiceNumber) {
-            if(choiceNumber == 1) return "Pedra"
-            else if(choiceNumber == 2) return "Papel"
+        playerResetChoice() {
+            this.haveChoice = false
+            this.choice = null
+        },
+        playerChoiceNumber() {
+            if(this.choice == 1) return "Pedra"
+            else if(this.choice == 2) return "Papel"
             else return "Tesoura"
         }
     },
     mounted() {
-        this.socket = io.connect(window.location.origin)
+        this.socket = io.connect(window.location.origin) //IP e porta da conexao
 
         const backupThis = this
 
@@ -55,8 +60,38 @@ const app = new Vue({
         })
 
         this.socket.on('choice.made', (data) => {
+            
             backupThis.game = data
             backupThis.renderMsgChoose()
+        })
+
+        this.socket.on('round.reset', (data) => {
+            console.log(data.roundWinner)
+            if(data.roundWinner == 0)
+                backupThis.msg = "Houve um empate na rodada! Ninguém pontuou"
+            else if(data.roundWinner == backupThis.playerIndex)
+                backupThis.msg = "Você venceu a rodada! +1 ponto"
+            else
+                backupThis.msg = "Você perdeu a rodada!"
+            
+            setTimeout(() => {
+                this.playerResetChoice()
+                backupThis.renderMsgChoose()
+            }, 2500)
+        })
+
+        // this.socket.on('update.scoreboard', () => {
+            
+        // })
+
+        this.socket.on('gameover', (data) => {
+            console.log(data)
+            if(data.winner == 0)
+                backupThis.msg = "Houve um empate!"
+            else if(data.winner == backupThis.playerIndex)
+                backupThis.msg = "Você venceu!"
+            else
+                backupThis.msg = "Você perdeu!"
         })
 
         this.socket.on('opponent.left', () => {
@@ -64,5 +99,6 @@ const app = new Vue({
             backupThis.blockRegister = false
             backupThis.msg = "O adversário saiu do jogo!"
         })
+
     }
 })

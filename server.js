@@ -57,22 +57,45 @@ socket.on('connection', (sock) => {
         if(data.index == 0){
             clients[game.player1.socketID].emit(event, game)
             game.incrementNumberChoices()
+            game.player1.choice = data.choice
             console.log('choice.made 1 foi chamado')
         }
         else if(data.index == 1){
             clients[game.player2.socketID].emit(event, game)
             game.incrementNumberChoices()
+            game.player2.choice = data.choice
             console.log('choice.made 2 foi chamado')
         }
         //verifica se os dois jogadores fizeram suas jogadas
         if(game.numberChoices == 2) {
-            //chama a funcao de fim de round
-            console.log("proxima rodada")
-            game.incrementRound()
-            console.log(game.round)
-            game.board.resetChoices()
+            //chama a funcao de fim de round e pega o vencedor da rodada
+            let roundWinner = game.checkRoundWinner()
+            game.setScoreboard(roundWinner)
+            
+            //verifica se os 5 rounds foram completados ou se algum jogador atingiu 3 pontos
+            let isGameOver = game.checkGameOver()
+            
+            setTimeout(() => {//deve chamar um endpoint gameover
+                if(isGameOver.gameOver == true) {
+                    console.log(isGameOver)
+                    console.log(isGameOver.winner)
+                    clients[game.player1.socketID].emit('gameover', {winner: isGameOver.winner})
+                    clients[game.player2.socketID].emit('gameover', {winner: isGameOver.winner})
+                }
+                else {
+                    //indicador do proximo round
+                    game.board.resetChoices()
+                    game.resetNumberChoices()
+                
+                    //passar o roundWinner pelo emit do round.reset
+                    clients[game.player1.socketID].emit('round.reset', {roundWinner: roundWinner})
+                    clients[game.player1.socketID].emit('update.scoreboard', {roundWinner: roundWinner})
+                    clients[game.player2.socketID].emit('round.reset', {roundWinner: roundWinner})
+                    clients[game.player2.socketID].emit('update.scoreboard', {roundWinner: roundWinner})
+                }
+                game.incrementRound()
+            }, 1500)
         }
-        
     })
     
     //desconexao dos dois jogadores caso um saia
@@ -92,7 +115,7 @@ socket.on('connection', (sock) => {
 })
 
 function joinPlayers(socket, data) {
-    const playerIndex = unmatched ? 1 : 0
+    const playerIndex = unmatched ? 2 : 1
     const player = new Player(data.playerName, playerIndex, socket.id)
 
     //se ja tiver algum jogador esperando
