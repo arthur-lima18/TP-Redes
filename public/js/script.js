@@ -46,7 +46,7 @@ const app = new Vue({
         }
     },
     mounted() {
-        this.socket = io.connect(window.location.origin) //IP e porta da conexao
+        this.socket = io.connect('http://localhost:8000') //IP e porta da conexao
 
         const backupThis = this
 
@@ -66,7 +66,6 @@ const app = new Vue({
         })
 
         this.socket.on('round.reset', (data) => {
-            console.log(data.roundWinner)
             if(data.roundWinner == 0)
                 backupThis.msg = "Houve um empate na rodada! Ninguém pontuou"
             else if(data.roundWinner == backupThis.playerIndex)
@@ -85,7 +84,6 @@ const app = new Vue({
         // })
 
         this.socket.on('gameover', (data) => {
-            console.log(data)
             if(data.winner == 0)
                 backupThis.msg = "Houve um empate!"
             else if(data.winner == backupThis.playerIndex)

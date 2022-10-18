@@ -8,6 +8,7 @@ import Game from './src/models/Game.js'
 
 const app = express()
 const server = http.Server(app).listen(8000)
+// const server = http.Server(app).listen(8000, '192.168.2.113')
 const socket = new Server(server)
 const clients = {}
 
@@ -24,8 +25,8 @@ app.get('/', (req, res) => {
     return res.render('index.html')
 })
 
-const games = {} //objeto para criar as partidas
-let unmatched = null //variavel que funciona como uma "fila" de partidas
+const games = {} //objeto para criar as partidas e permitir que aconteçam mais de uma ao mesmo tempo
+let unmatched = null //variavel que funciona como uma "fila" de partidas, se for true é pq uma partida ainda nao foi encontrada e ha um usuario esperando
 
 //conexao via socket
 socket.on('connection', (sock) => {
@@ -58,16 +59,16 @@ socket.on('connection', (sock) => {
             clients[game.player1.socketID].emit(event, game)
             game.incrementNumberChoices()
             game.player1.choice = data.choice
-            console.log('choice.made 1 foi chamado')
         }
         else if(data.index == 1){
             clients[game.player2.socketID].emit(event, game)
             game.incrementNumberChoices()
             game.player2.choice = data.choice
-            console.log('choice.made 2 foi chamado')
         }
+
         //verifica se os dois jogadores fizeram suas jogadas
         if(game.numberChoices == 2) {
+            game.setChoicesHistory(game.round, game.player1.choice, game.player2.choice)
             //chama a funcao de fim de round e pega o vencedor da rodada
             let roundWinner = game.checkRoundWinner()
             game.setScoreboard(roundWinner)
@@ -77,8 +78,6 @@ socket.on('connection', (sock) => {
             
             setTimeout(() => {//deve chamar um endpoint gameover
                 if(isGameOver.gameOver == true) {
-                    console.log(isGameOver)
-                    console.log(isGameOver.winner)
                     clients[game.player1.socketID].emit('gameover', {winner: isGameOver.winner})
                     clients[game.player2.socketID].emit('gameover', {winner: isGameOver.winner})
                 }
@@ -87,11 +86,9 @@ socket.on('connection', (sock) => {
                     game.board.resetChoices()
                     game.resetNumberChoices()
                 
-                    //passar o roundWinner pelo emit do round.reset
+                    //passa o roundWinner pelo emit do round.reset para personalizar a mensagem ao usuario
                     clients[game.player1.socketID].emit('round.reset', {roundWinner: roundWinner})
-                    clients[game.player1.socketID].emit('update.scoreboard', {roundWinner: roundWinner})
                     clients[game.player2.socketID].emit('round.reset', {roundWinner: roundWinner})
-                    clients[game.player2.socketID].emit('update.scoreboard', {roundWinner: roundWinner})
                 }
                 game.incrementRound()
             }, 1500)
@@ -102,13 +99,12 @@ socket.on('connection', (sock) => {
     sock.on('disconnect', () => {
         const game = games[sock.id]
         if(game) {
-            const socketEmitPlayerLeft = game.player1.socketID == socket.id ? clients[game.player2.socketID] : clients[game.player1.socketID]
+            const socketEmitPlayerLeft = game.player1.socketID == sock.id ? clients[game.player2.socketID] : clients[game.player1.socketID]
         
             if(socketEmitPlayerLeft)
                 socketEmitPlayerLeft.emit('opponent.left')
 
             delete games[socket.id]
-            delete games[socketEmitPlayerLeft.id]
         }
         delete clients[id]
     })

@@ -114,3 +114,11 @@ html, body {
     width: 100px;
     height: 100px;
 }
+
+.board {
+    margin-top: 36px;
+}
+
+.game-historic {
+    margin: 12px;
+}

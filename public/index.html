@@ -31,15 +31,16 @@
     
             <div class="game">
                 <div class="options">
-                    <input type="image" src="./assets/pedra.png" width="160" height="160" @click="playerChoice(1)"/>
-                    <input type="image" src="./assets/papel.png" width="160" height="160" @click="playerChoice(2)"/>
-                    <input type="image" src="./assets/tesoura.png" width="160" height="160" @click="playerChoice(3)"/>
+                    <input type="image" src="./assets/1.png" width="160" height="160" @click="playerChoice(1)"/>
+                    <input type="image" src="./assets/2.png" width="160" height="160" @click="playerChoice(2)"/>
+                    <input type="image" src="./assets/3.png" width="160" height="160" @click="playerChoice(3)"/>
                 </div>
-                <!-- <div class="board">
-                    
-                </div> -->
-                <div class="next-round" v-if="isRoundFinished">
-                    <button class="btn next-round-button" @click="changeRound()">Próxima rodada!</button>
+                <div class="board">
+                    <div class="game-historic" v-for="round in game._choicesHistoric">
+                        <input disabled type="image" :src="'./assets/' + round.choice1 + '.png'" width="36" height="36" />
+                        <strong>Rodada {{ round.round }}</strong>
+                        <input disabled type="image" :src="'./assets/' + round.choice2 + '.png'" width="36" height="36" />
+                    </div>
                 </div>
             </div>
         </div>
